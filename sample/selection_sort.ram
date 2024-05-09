@@ -1,0 +1,74 @@
+;選択ソートサンプルファイル
+;selection_sort.tapeファイルに読み込む値が記述されている
+;実行方法: python main.py sample\selection_sort.ram -r sample\selection_sort.tape
+;10, 4, 1, 3, 2 → 要素数n = 4, ソート対象データ[4, 1, 3, 2]
+
+  READ 0 ;要素数nを読み込み
+  JZERO end
+  STORE 6
+  ADD =6
+  STORE 2
+  LOAD =7
+  STORE 1
+read_loop:
+  LOAD 1
+  READ *0
+  ADD =1
+  STORE 1
+  SUB 2
+  JGTZ start
+  JUMP read_loop
+start:
+  LOAD =7
+  STORE 1 ;iの初期値
+  LOAD 6
+  ADD =5
+  STORE 2 ;iの終了値
+  ADD =1
+  STORE 4 ;jの終了値
+loop1-1:
+  LOAD 1
+  SUB 2
+  JGTZ output ;iが終了値に達したら終了
+  LOAD 1
+  ADD =1
+  STORE 3;jの初期値
+loop1-2:
+  LOAD 3
+  SUB 4
+  JGTZ loop1-2end ;jが終了値に達したらループ終了
+  LOAD *3
+  SUB *1
+  JGTZ incr
+  LOAD *1 ;入れ替え
+  STORE 5
+  LOAD *3
+  STORE *1
+  LOAD 5
+  STORE *3
+incr:
+  LOAD 3
+  ADD =1
+  STORE 3
+  JUMP loop1-2
+loop1-2end:
+  LOAD 1
+  ADD =1
+  STORE 1
+  JUMP loop1-1
+output:
+  LOAD =7
+  STORE 1 ;iの初期値
+  LOAD 6
+  ADD =6
+  STORE 2 ;iの終了値
+loop2:
+  LOAD 1
+  WRITE *0
+  ADD =1
+  STORE 1
+  SUB 2
+  JGTZ end
+  JUMP loop2
+end:
+  HALT
