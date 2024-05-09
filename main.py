@@ -7,40 +7,54 @@ debug = False
 
 
 def main():
-  filename, watch, step = procArg()
+  filename, rfilename, watch, step = procArg()
   prog = readRAMfile(filename)
-  run(prog, watch, step)
+  read = readREADfile(rfilename)
+  run(prog, read, watch, step)
 
 
 def procArg():
   global debug
 
   filename = None
+  rfilename = None
   watch = False
   step = False
   i = 1
   while(i < len(sys.argv)):
     if sys.argv[i].startswith('-'):
-      for arg in sys.argv[i][1:]:
-        if arg == "d":
-          debug = True
-          dbg("Argument specified: debug")
-        elif arg == "w":
-          watch = True
-          dbg("Argument specified: watch")
-        elif arg == "s":
-          step = True
-          dbg("Argument specified: step")
-        else:
-          err("ArgumentError", 'Argument "-'+ arg +'" is unknown.')
+      if len(sys.argv[i][1:]) == 0: #引数未指定時
+        err("ArgumentError", 'Argument is not specified.')
+      elif len(sys.argv[i][1:]) == 1 and (sys.argv[i][1:] == 'r'): #単独指定専用（追加引数必要）引数指定時
+        if i + 1 >= len(sys.argv) or sys.argv[i + 1].startswith('-'): #追加引数未指定時
+          err("ArgumentError", 'Argument "-'+ sys.argv[i][1:] +'" requires additional argument.')
+        elif sys.argv[i][1:] == 'r':
+          rfilename = sys.argv[i + 1]
+          dbg("READ Filename specified: " + rfilename)
+        i += 1
+      else: #引数複数指定時
+        for arg in sys.argv[i][1:]:
+          if arg == "d":
+            debug = True
+            dbg("Argument specified: debug")
+          elif arg == "w":
+            watch = True
+            dbg("Argument specified: watch")
+          elif arg == "s":
+            step = True
+            dbg("Argument specified: step")
+          elif arg == "r": #単独指定専用引数を複数指定時に指定した場合
+            err("ArgumentError", 'Argument "-'+ arg +'" must be specified alone.')
+          else:
+            err("ArgumentError", 'Argument "-'+ arg +'" is unknown.')
     else:
       filename = sys.argv[i]
       dbg("Filename specified: " + filename)
     i += 1
-  return filename, watch, step
+  return filename, rfilename, watch, step
 
 
-def run(prog, watch, step):
+def run(prog, read, watch, step):
   prog = removeComment(prog)
   charCheck1(prog) #コメントを除去した後に文字種チェック
   label, prog = getlabel(prog) #ラベルと行数の対応付け
@@ -163,6 +177,16 @@ def run(prog, watch, step):
         print("WRITE: " + str(val))
       else:
         print("WRITE r" + adr + ": " + str(val))
+    elif p[0] == "READ":
+      if read is None:
+        err("READCommandError",'Commad "READ" is executed but the READfile is not specified.')
+      else:
+        val, adr = loadVal(p[1], mem, row, accept="*", onlyAddress=True)
+        try:
+          mem[adr] = read.pop(0)
+        except:
+          err("READCommandError",'End of the READfile data has been reached.')
+        dbg("  READ: r" + adr + " <- " + str(mem[adr]))
     else:
       err("UnknownCommandError",'Unknown command "' + p[0] + '" in line ' + str(row + 1))
     count += 1
@@ -334,6 +358,28 @@ def readRAMfile(filename):
     dbg("RAMFileRead")
     printProg(prog)
   return prog
+
+
+def readREADfile(rfilename):
+  if rfilename is None:
+    return None
+  else:
+    if not os.path.isfile(rfilename):
+      err("READFileError", "READfile you specified does not exist or is not a file.")
+    f = open(rfilename, 'r')
+    read = f.readlines()
+    f.close()
+    for i in range(len(read)):
+      try:
+        read[i] = int(read[i])
+      except ValueError:
+        err("READFileError", "Each line of the READfile must be an integer.")
+    if debug:
+      dbg("READFileRead")
+      print(read)
+    return read
+
+
 
 
 def printProg(prog):
