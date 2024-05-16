@@ -269,23 +269,20 @@ def removeIndent(prog):
 
 
 def parseProg(prog):
+  #区切り文字の前後に空白やタブ文字が混入していても動作するように正規表現
+  p_norm = re.compile(r'[ \t]+')
+  p_sj = re.compile(r'[ \t]*\,[ \t]*')
+  
   i = 0
   proglen = len(prog)
   while i < proglen:
     #SJ命令かそうでないかで分岐
-    if prog[i].startswith('SJ'):
+    if p_norm.split(prog[i])[0] == "SJ":
       p = ['SJ']
-      p += prog[i][2:].split(',') #SJ命令なら，カンマでパース
+      p += p_sj.split(prog[i][3:].lstrip(" \t")) #SJ命令なら，カンマでパース SJ命令のときのみ第一アドレス部の前の空文字を除去できないので除去
       prog[i] = p
     else:
-      prog[i] = prog[i].split(' ') #SJ命令以外なら，そのまま空白文字でパース
-    #空白を削除
-    j = 0
-    progilen = len(prog[i])
-    while j < progilen:
-      prog[i][j] = prog[i][j].replace(' ','')
-      prog[i][j] = prog[i][j].replace('\t','')
-      j += 1
+      prog[i] = p_norm.split(prog[i]) #SJ命令以外なら，そのまま空白文字でパース
     i += 1
   if debug:
     dbg("parseProg Finished")
