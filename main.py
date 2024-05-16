@@ -60,7 +60,7 @@ def run(prog, read, watch, step):
   label, prog = getlabel(prog) #ラベルと行数の対応付け
   prog = removeIndent(prog)
   prog = parseProg(prog)
-  charCheck2(prog) #リストにパースした後に文字種チェック
+  addrCheck(prog) #リストにパースした後に文字種チェック
 
   count = 0
   mem = {} #メモリ効率をよくするため辞書型。リスト型は大きい番地を使用した際に効率が悪い
@@ -215,19 +215,19 @@ def charCheck1(prog):
   dbg("charCheck1 Finished")
 
 
-def charCheck2(prog):
-  #リストにパースした後の文字種チェック
-  p = re.compile('[=*a-zA-Z0-9]+')
+def addrCheck(prog):
+  #リストにパースした後のアドレスチェック
+  p = re.compile(r'(=-?\d+)|(\*?\d+)') #即値は-を許可。アドレスは*を許可
   for i, l in enumerate(prog):
     if l[0] == '' or l[0] == 'HALT' or l[0] == 'JUMP' or l[0] == 'JGTZ' or l[0] == 'JZERO':
       continue
     elif l[0] == 'SJ':
       if not (p.fullmatch(l[1]) and p.fullmatch(l[2])):
-        err("SyntaxError", "Unexpected character in line " + str(i + 1))
+        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value in line " + str(i + 1))
     else:
       if not (p.fullmatch(l[1])):
-        err("SyntaxError", "Unexpected character in line " + str(i + 1))
-  dbg("charCheck2 Finished")
+        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value in line " + str(i + 1))
+  dbg("addrCheck Finished")
 
 
 def getlabel(prog):
