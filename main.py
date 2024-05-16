@@ -242,6 +242,8 @@ def getlabel(prog):
       l = l.lstrip(" \t") #先頭から空白とタブ文字を削除
       if " " in l:
         err("LabelError","Label must not contain spaces in line " + str(i + 1)) #ラベルに空白あったらエラー
+      if l in label:
+        err("LabelError",'Label "' + l + '" is already defined before in line ' + str(i + 1)) #ラベルに空白あったらエラー
       label[l] = i
       prog[i] = prog[i][prog[i].find(":") + 1:]
       dbg("LabelAllocated: " + l + " -> line " + str(label[l] + 1))
