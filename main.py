@@ -239,6 +239,7 @@ def getlabel(prog):
       if prog[i].count(':') >= 2: #1行に2回':'が出現したらエラー
         err("LabelError","Label delimiter ':' appears more than 2 times in line " + str(i + 1))
       l = prog[i][0:prog[i].find(":")]
+      l = l.lstrip(" \t") #先頭から空白とタブ文字を削除
       if " " in l:
         err("LabelError","Label must not contain spaces in line " + str(i + 1)) #ラベルに空白あったらエラー
       label[l] = i
