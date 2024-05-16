@@ -142,7 +142,7 @@ def run(prog, tape, watch, step):
         try:
           int(op1)
         except ValueError:
-          err("SJOperandError","The first argument of SJ command must specify the address as an integer in line " + str(row + 1))
+          err("SJOperandError","The first argument of SJ command must specify the address as an integer" + line(row))
         
         #第二オペランドは直接アドレス指定か即値のみなのでチェック
         op2_temp = op2
@@ -151,7 +151,7 @@ def run(prog, tape, watch, step):
         try:
           int(op2_temp)
         except ValueError:
-          err("SJOperandError","The second argument of SJ command must specify the address as an integer or an immediate value in line " + str(row + 1))
+          err("SJOperandError","The second argument of SJ command must specify the address as an integer or an immediate value" + line(row))
         
         if(op1 == op2): #op1とop2が同一。op1は必ず0で初期化される
           mem[op1] = 0
@@ -170,7 +170,7 @@ def run(prog, tape, watch, step):
           row = jump(lb, label, row)
           dbg('  SJ: Jump to Label "' + lb + '" (line ' + str(row + 2) + ')')
       else:
-        err("SJOperandError","SJ command needs just 3 operands in line " + str(row + 1))
+        err("SJOperandError","SJ command needs just 3 operands" + line(row))
     elif p[0] == "WRITE":
       val, adr = loadVal(p[1], mem, row)
       if adr is None:
@@ -188,7 +188,7 @@ def run(prog, tape, watch, step):
           err("READCommandError",'End of the Tapefile data has been reached.')
         dbg("  READ: r" + adr + " <- " + str(mem[adr]))
     else:
-      err("UnknownCommandError",'Unknown command "' + p[0] + '" in line ' + str(row + 1))
+      err("UnknownCommandError",'Unknown command "' + p[0] + line(row))
     count += 1
     row += 1
 
@@ -211,7 +211,7 @@ def charCheck1(prog):
   p = re.compile('[-_:,=*a-zA-Z0-9 \n\t]+')
   for i, l in enumerate(prog):
     if not p.fullmatch(l):
-      err("SyntaxError", "Unexpected character in line " + str(i + 1))
+      err("SyntaxError", "Unexpected character" + line(i))
   dbg("charCheck1 Finished")
 
 
@@ -223,10 +223,10 @@ def addrCheck(prog):
       continue
     elif l[0] == 'SJ':
       if not (p.fullmatch(l[1]) and p.fullmatch(l[2])):
-        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value in line " + str(i + 1))
+        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value" + line(i))
     else:
       if not (p.fullmatch(l[1])):
-        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value in line " + str(i + 1))
+        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value" + line(i))
   dbg("addrCheck Finished")
 
 
@@ -237,13 +237,13 @@ def getlabel(prog):
   while i < proglen:
     if ":" in prog[i]:
       if prog[i].count(':') >= 2: #1行に2回':'が出現したらエラー
-        err("LabelError","Label delimiter ':' appears more than 2 times in line " + str(i + 1))
+        err("LabelError","Label delimiter ':' appears more than 2 times" + line(i))
       l = prog[i][0:prog[i].find(":")]
       l = l.lstrip(" \t") #先頭から空白とタブ文字を削除
       if " " in l:
-        err("LabelError","Label must not contain spaces in line " + str(i + 1)) #ラベルに空白あったらエラー
+        err("LabelError","Label must not contain spaces" + line(i)) #ラベルに空白あったらエラー
       if l in label:
-        err("LabelError",'Label "' + l + '" is already defined before in line ' + str(i + 1)) #ラベルに空白あったらエラー
+        err("LabelError",'Label "' + l + '" is already defined before' + line(i)) #ラベルに空白あったらエラー
       label[l] = i
       prog[i] = prog[i][prog[i].find(":") + 1:]
       dbg("LabelAllocated: " + l + " -> line " + str(label[l] + 1))
@@ -293,7 +293,7 @@ def parseProg(prog):
 
 
 
-def loadVal(ope, mem, line, accept = "=*", onlyAddress = False):
+def loadVal(ope, mem, row, accept = "=*", onlyAddress = False):
   #accept…アドレス指定部の修飾子を制限。修飾子なしは常にあり得るが，例えばSTORE命令に=は使えないのでメソッドコール時にaccept="*"を指定
   #onlyAddress…間接アドレスを解決するのみで，メモリから値を取得しない。STORE命令など
   val, adr = None, None
@@ -301,7 +301,7 @@ def loadVal(ope, mem, line, accept = "=*", onlyAddress = False):
     if "=" in accept:
       val = ope[1:]
     else:
-      err("AddressQualifierError", "Address qualifier '=' is not accepted in line " + str(line + 1))
+      err("AddressQualifierError", "Address qualifier '=' is not accepted" + line(row))
   elif ope[0] == "*":
     if "*" in accept:
       try:
@@ -310,30 +310,30 @@ def loadVal(ope, mem, line, accept = "=*", onlyAddress = False):
         if not onlyAddress:
           val = mem[adr] #実効アドレスに含まれる値を取り出す
       except KeyError:
-        err("MemoryError","Address r" + adr + " is not initialized in line " + str(line + 1))
+        err("MemoryError","Address r" + adr + " is not initialized" + line(row))
     else:
-      err("AddressQualifierError", "Address qualifier '*' is not accepted in line " + str(line + 1))
+      err("AddressQualifierError", "Address qualifier '*' is not accepted" + line(row))
   else:
     adr = ope
     if not onlyAddress:
       try:
         val = mem[adr]
       except KeyError:
-        err("MemoryError","Address r" + adr + " is not initialized in line " + str(line + 1))
+        err("MemoryError","Address r" + adr + " is not initialized" + line(row))
   if not onlyAddress:
     try:
       val = int(val)
     except ValueError:
-      err("ValueError",'value "' + val + '" is not an integer in line ' + str(line + 1))
+      err("ValueError",'value "' + val + '" is not an integer' + line(row))
   return val, adr
 
 
-def jump(lb, label, line):
+def jump(lb, label, row):
   try:
-    row = label[lb] - 1 #後ほどインクリメントされるため，敢えて-1しておく
+    jumprow = label[lb] - 1 #後ほどインクリメントされるため，敢えて-1しておく
   except KeyError:
-    err("LabelError","Label " + lb + " is not defined in line " + str(line + 1))
-  return row
+    err("LabelError","Label " + lb + " is not defined" + line(row))
+  return jumprow
   
 
   
@@ -379,7 +379,8 @@ def readTapefile(tapefilename):
     return tape
 
 
-
+def line(i):
+  return "  (line " + str(i+1) + ")"
 
 def printProg(prog, end = ''):
   proglen = len(str(len(prog))) #行数表示桁数を求める。log10は少数で誤差が出る様なので避けた。
