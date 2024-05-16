@@ -368,6 +368,11 @@ def readTapefile(tapefilename):
     f = open(tapefilename, 'r')
     tape = f.readlines()
     f.close()
+    for i in range(len(tape) - 1, -1, -1):
+      if tape[i].lstrip(" \t") == '\n':
+        tape.pop(i)
+      else:
+        break
     for i in range(len(tape)):
       try:
         tape[i] = int(tape[i])
