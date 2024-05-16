@@ -256,12 +256,15 @@ def removeIndent(prog):
   i = 0
   proglen = len(prog)
   while i < proglen:
-    while prog[i][0] == ' ' or prog[i][0] == '\t':
-      prog[i] = prog[i][1:]
+    prog[i] = prog[i].lstrip(" \t") #先頭から空白とタブ文字を削除
+    
+    #末尾から改行文字を削除し，空白やタブ文字を削除する
+    prog[i] = prog[i].rstrip("\n")
+    prog[i] = prog[i].rstrip(" \t")
     i += 1
   if debug:
     dbg("removeIndent Finished")
-    printProg(prog)
+    printProg(prog, end = "\n")
   return prog
 
 
@@ -269,10 +272,6 @@ def parseProg(prog):
   i = 0
   proglen = len(prog)
   while i < proglen:
-    #末尾から改行文字を削除し，空白やタブ文字を削除する
-    prog[i] = prog[i].rstrip("\n")
-    while len(prog[i]) > 0 and prog[i][-1].isspace():
-      prog[i] = prog[i].rstrip(" ").rstrip("\t")
     #SJ命令かそうでないかで分岐
     if prog[i].startswith('SJ'):
       p = ['SJ']
@@ -290,7 +289,7 @@ def parseProg(prog):
     i += 1
   if debug:
     dbg("parseProg Finished")
-    printProg2(prog)
+    printProg(prog, end = "\n")
   return prog
 
 
@@ -383,15 +382,10 @@ def readREADfile(rfilename):
 
 
 
-def printProg(prog):
+def printProg(prog, end = ''):
   proglen = len(str(len(prog))) #行数表示桁数を求める。log10は少数で誤差が出る様なので避けた。
   for i, l in enumerate(prog):
-    print(f"{i + 1:<{proglen}}| {l}", end='')
-
-def printProg2(prog):
-  proglen = len(str(len(prog))) #行数表示桁数を求める。log10は少数で誤差が出る様なので避けた。
-  for i, l in enumerate(prog):
-    print(f"{i + 1:<{proglen}}| {l}")
+    print(f"{i + 1:<{proglen}}| {l}", end=end)
 
 
 def dbg(msg, banner=True, end='\n'):
