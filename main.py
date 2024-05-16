@@ -7,17 +7,17 @@ debug = False
 
 
 def main():
-  filename, rfilename, watch, step = procArg()
+  filename, tapefilename, watch, step = procArg()
   prog = readRAMfile(filename)
-  read = readREADfile(rfilename)
-  run(prog, read, watch, step)
+  tape = readTapefile(tapefilename)
+  run(prog, tape, watch, step)
 
 
 def procArg():
   global debug
 
   filename = None
-  rfilename = None
+  tapefilename = None
   watch = False
   step = False
   i = 1
@@ -25,12 +25,12 @@ def procArg():
     if sys.argv[i].startswith('-'):
       if len(sys.argv[i][1:]) == 0: #引数未指定時
         err("ArgumentError", 'Argument is not specified.')
-      elif len(sys.argv[i][1:]) == 1 and (sys.argv[i][1:] == 'r'): #単独指定専用（追加引数必要）引数指定時
+      elif len(sys.argv[i][1:]) == 1 and (sys.argv[i][1:] == 't'): #単独指定専用（追加引数必要）引数指定時
         if i + 1 >= len(sys.argv) or sys.argv[i + 1].startswith('-'): #追加引数未指定時
           err("ArgumentError", 'Argument "-'+ sys.argv[i][1:] +'" requires additional argument.')
-        elif sys.argv[i][1:] == 'r':
-          rfilename = sys.argv[i + 1]
-          dbg("READ Filename specified: " + rfilename)
+        elif sys.argv[i][1:] == 't':
+          tapefilename = sys.argv[i + 1]
+          dbg("Tape Filename specified: " + tapefilename)
         i += 1
       else: #引数複数指定時
         for arg in sys.argv[i][1:]:
@@ -43,7 +43,7 @@ def procArg():
           elif arg == "s":
             step = True
             dbg("Argument specified: step")
-          elif arg == "r": #単独指定専用引数を複数指定時に指定した場合
+          elif arg == "t": #単独指定専用引数を複数指定時に指定した場合
             err("ArgumentError", 'Argument "-'+ arg +'" must be specified alone.')
           else:
             err("ArgumentError", 'Argument "-'+ arg +'" is unknown.')
@@ -51,10 +51,10 @@ def procArg():
       filename = sys.argv[i]
       dbg("Filename specified: " + filename)
     i += 1
-  return filename, rfilename, watch, step
+  return filename, tapefilename, watch, step
 
 
-def run(prog, read, watch, step):
+def run(prog, tape, watch, step):
   prog = removeComment(prog)
   charCheck1(prog) #コメントを除去した後に文字種チェック
   label, prog = getlabel(prog) #ラベルと行数の対応付け
@@ -178,14 +178,14 @@ def run(prog, read, watch, step):
       else:
         print("WRITE r" + adr + ": " + str(val))
     elif p[0] == "READ":
-      if read is None:
-        err("READCommandError",'Commad "READ" is executed but the READfile is not specified.')
+      if tape is None:
+        err("READCommandError",'Commad "READ" is executed but Tapefile is not specified.')
       else:
         val, adr = loadVal(p[1], mem, row, accept="*", onlyAddress=True)
         try:
-          mem[adr] = read.pop(0)
+          mem[adr] = tape.pop(0)
         except:
-          err("READCommandError",'End of the READfile data has been reached.')
+          err("READCommandError",'End of the Tapefile data has been reached.')
         dbg("  READ: r" + adr + " <- " + str(mem[adr]))
     else:
       err("UnknownCommandError",'Unknown command "' + p[0] + '" in line ' + str(row + 1))
@@ -357,24 +357,24 @@ def readRAMfile(filename):
   return prog
 
 
-def readREADfile(rfilename):
-  if rfilename is None:
+def readTapefile(tapefilename):
+  if tapefilename is None:
     return None
   else:
-    if not os.path.isfile(rfilename):
-      err("READFileError", "READfile you specified does not exist or is not a file.")
-    f = open(rfilename, 'r')
-    read = f.readlines()
+    if not os.path.isfile(tapefilename):
+      err("TapeFileError", "Tapefile you specified does not exist or is not a file.")
+    f = open(tapefilename, 'r')
+    tape = f.readlines()
     f.close()
-    for i in range(len(read)):
+    for i in range(len(tape)):
       try:
-        read[i] = int(read[i])
+        tape[i] = int(tape[i])
       except ValueError:
-        err("READFileError", "Each line of the READfile must be an integer.")
+        err("TapeFileError", "Each line of the Tapefile must be an integer.")
     if debug:
-      dbg("READFileRead")
-      print(read)
-    return read
+      dbg("TapeFileRead")
+      print(tape)
+    return tape
 
 
 
