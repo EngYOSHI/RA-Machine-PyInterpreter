@@ -60,7 +60,7 @@ def run(prog, tape, watch, step):
   label, prog = getlabel(prog) #ラベルと行数の対応付け
   prog = removeIndent(prog)
   prog = parseProg(prog)
-  addrCheck(prog) #リストにパースした後に文字種チェック
+  commandCheck(prog) #リストにパースした後に文字種チェック
 
   count = 0
   mem = {} #メモリ効率をよくするため辞書型。リスト型は大きい番地を使用した際に効率が悪い
@@ -215,19 +215,41 @@ def charCheck1(prog):
   dbg("charCheck1 Finished")
 
 
-def addrCheck(prog):
+def commandCheck(prog):
   #リストにパースした後のアドレスチェック
   p = re.compile(r'(=-?\d+)|(\*?\d+)') #即値は-を許可。アドレスは*を許可
   for i, l in enumerate(prog):
-    if l[0] == '' or l[0] == 'HALT' or l[0] == 'JUMP' or l[0] == 'JGTZ' or l[0] == 'JZERO':
+    if l[0] == '': #コマンドなし
       continue
-    elif l[0] == 'SJ':
-      if not (p.fullmatch(l[1]) and p.fullmatch(l[2])):
-        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value" + line(i))
-    else:
+    elif l[0] == 'HALT': #引数0
+      if len(l) == 1:
+        continue
+      else:
+        err("SyntaxError",'The command "HALT" should not have parameters' + line(i))
+    elif l[0] == 'JUMP' or l[0] == 'JGTZ' or l[0] == 'JZERO': #ジャンプ命令
+      if len(l) == 2:
+        continue
+      else:
+        err("SyntaxError",'The command "' + l[0] + '" should have only 1 parameter' + line(i))
+    #引数1
+    elif l[0] == 'LOAD' or l[0] == 'STORE' or l[0] == 'READ' or l[0] == 'WRITE' or l[0] == 'ADD' or l[0] == 'SUB' or l[0] == 'MULT' or l[0] == 'DIV':
       if not (p.fullmatch(l[1])):
         err("SyntaxError", "The address you specified is not a valid foramt address or immediate value" + line(i))
-  dbg("addrCheck Finished")
+      elif len(l) == 2:
+        continue
+      else:
+        err("SyntaxError",'The command "' + l[0] + '" should have only 1 parameter' + line(i))
+    elif l[0] == 'SJ': #SJ命令
+      if not (p.fullmatch(l[1]) and p.fullmatch(l[2])):
+        err("SyntaxError", "The address you specified is not a valid foramt address or immediate value" + line(i))
+      elif len(l) == 4:
+        continue
+      else:
+        err("SyntaxError",'The command "SJ" should have only 3 parameter' + line(i))
+    else:
+      err("UnknownCommandError",'Unknown command "' + l[0] + line(i))
+      
+  dbg("commandCheck Finished")
 
 
 def getlabel(prog):
