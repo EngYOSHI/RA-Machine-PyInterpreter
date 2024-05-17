@@ -365,13 +365,17 @@ def readRAMfile(filename):
     err("RAMFileError","RAMfile is not specified.")
   if not os.path.isfile(filename):
     err("RAMFileError", "RAMfile you specified does not exist or is not a file.")
-  #filename.encode("cp437").decode("utf-8") #Shift-JISとして読み込む
-  f = open(filename, 'r')
   try:
-    prog = f.readlines()
+    with open(filename, 'r', encoding='utf-8') as f:
+      prog = f.readlines()
+      dbg("RAMFile encoding mode: UTF-8")
   except UnicodeDecodeError:
-    err("RAMFileError", "RAMfile must be encoded in Shift-JIS") #Shift-JISでない場合
-  f.close()
+    try:
+      with open(filename, 'r', encoding='cp932') as f:
+        prog = f.readlines()
+        dbg("RAMFile encoding mode: Shift-JIS")
+    except UnicodeDecodeError:
+      err("RAMFileError", "RAMfile must be encoded in UTF-8 or Shift-JIS") #Shift-JISかUTF-8でない場合
   #ファイルの末尾が改行で終わっていない場合，表示上および実行上の問題があるので追加する
   if prog[-1][-1] != "\n":
     prog[-1] += "\n"
